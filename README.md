@@ -1,2 +1,2 @@
 # project-test
-A project used to test out image classification by using deep learning model.
+A project used to train classification model by using deep learning.
