@@ -29,9 +29,19 @@ from zipfile import ZipFile
 """
 ## Load the data: class 1 = Early type galaxy | class 0 = Late type galaxy
 """
-root_path = '/content/gdrive/MyDrive/DeepLearningProject/'
-input_file_name = 'dataset 2000'
-file_path = "".join([root_path,input_file_name,".zip"])
+
+# Project dataset root path
+#root_path = '/content/gdrive/MyDrive/DeepLearningProject/'
+root_path = 'D:\\Master\\Galaxy Zoo dataset\\small dataset folder\\'
+
+# File name for image dataset
+# input_file_name = 'dataset 2000'
+input_file_name = 'image folder for small dataset'
+
+# File path for model image 
+model_img_name = 'model.png'
+model_img_file = "".join([root_path, model_img_name])
+# file_path = "".join([root_path,input_file_name,".zip"])
 
 # unzip
 #ZipFile(file_path).extractall(root_path)
@@ -259,4 +269,18 @@ def make_model(input_shape, num_classes):
 
 
 model = make_model(input_shape=image_size + (3,), num_classes=2)
-keras.utils.plot_model(model, show_shapes=True)
+keras.utils.plot_model(model, to_file=model_img_file, show_shapes=True)
+
+
+# BACKUP
+# import matplotlib.pyplot as plt
+# import matplotlib.image as mpimg
+
+# image = mpimg.imread('model.png')
+# plt.imshow(image)
+# plt.show(block=False)
+# input('press <ENTER> to continue')
+
+# # from IPython.display import display, Image
+# # display(Image(filename='model.png'))
+# # input('press <ENTER> to continue')
