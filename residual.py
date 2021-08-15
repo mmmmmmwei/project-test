@@ -29,8 +29,8 @@ from zipfile import ZipFile
 """
 ## Load the data: class 1 = Early type galaxy | class 0 = Late type galaxy
 """
-root_path = '/content/gdrive/MyDrive/DeepLearningProject/'
-input_file_name = 'dataset 2000'
+root_path = 'D:\\Master\\Galaxy Zoo dataset\\'
+input_file_name = 'Small dataset early round vs late spiral'
 file_path = "".join([root_path,input_file_name,".zip"])
 
 # unzip
@@ -50,7 +50,7 @@ Now we have a `Images` folder which contain two subfolders, `class 1` and `class
 ## Generate a `Dataset`
 """
 
-image_size = (300, 300)
+image_size = (256, 256)
 batch_size = 32
 
 train_ds = tf.keras.preprocessing.image_dataset_from_directory(
@@ -101,8 +101,10 @@ Here are the first 9 images in the training dataset. As you can see, label 1 is 
 
 data_augmentation = keras.Sequential(
     [
+        layers.experimental.preprocessing.RandomRotation(0.25),
+        tf.keras.layers.experimental.preprocessing.RandomTranslation(0.1,0.1),
         layers.experimental.preprocessing.RandomFlip("horizontal"),
-        layers.experimental.preprocessing.RandomRotation(0.1),
+        layers.experimental.preprocessing.RandomFlip("vertical"),
     ]
 )
 
@@ -206,9 +208,9 @@ def make_model(input_shape, num_classes):
 
     # Entry block
     x = layers.experimental.preprocessing.Rescaling(1.0 / 255)(x)
-    x = layers.Conv2D(32, 3, strides=2, padding="same")(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.Activation("relu")(x)
+    # x = layers.Conv2D(32, 3, strides=2, padding="same")(x)
+    # x = layers.BatchNormalization()(x)
+    # x = layers.Activation("relu")(x)
 
     x = layers.Conv2D(64, 3, padding="same")(x)
     x = layers.BatchNormalization()(x)
@@ -217,23 +219,23 @@ def make_model(input_shape, num_classes):
     previous_block_activation = x  # Set aside residual
 
     for size in [64, 128, 256, 512]:
-        x = layers.Conv2D(size, 3, stride=2, padding="same")(x)
+        x = layers.Conv2D(size, 3, strides=2, padding="same")(x)
         x = layers.Activation("relu")(x)
         x = layers.BatchNormalization()(x)
 
-        x = layers.Conv2D(size, 3, stride=1, padding="same")(x)
+        x = layers.Conv2D(size, 3, strides=1, padding="same")(x)
 
-        previous_block_activation = layers.Conv2D(size, 1, stride=2, padding="same")(previous_block_activation)
+        previous_block_activation = layers.Conv2D(size, 1, strides=2, padding="same")(previous_block_activation)
 
         x = layers.add([x, previous_block_activation])  # Add back residual
         previous_block_activation = x  # Set aside next residual
 
 
-        x = layers.Conv2D(size, 3, stride=1, padding="same")(x)
+        x = layers.Conv2D(size, 3, strides=1, padding="same")(x)
         x = layers.Activation("relu")(x)
         x = layers.BatchNormalization()(x)
 
-        x = layers.Conv2D(size, 3, stride=1, padding="same")(x)
+        x = layers.Conv2D(size, 3, strides=1, padding="same")(x)
 
         x = layers.add([x, previous_block_activation])  # Add back residual
         previous_block_activation = x  # Set aside next residual
@@ -253,7 +255,7 @@ def make_model(input_shape, num_classes):
 
 
 model = make_model(input_shape=image_size + (3,), num_classes=2)
-# keras.utils.plot_model(model, show_shapes=True)
+keras.utils.plot_model(model, show_shapes=True)
 model.summary()
 
 # """
