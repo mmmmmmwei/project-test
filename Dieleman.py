@@ -23,6 +23,7 @@ we use Keras image preprocessing layers for image standardization and data augme
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
+from tensorflow.keras import activations
 import os
 from zipfile import ZipFile
 
@@ -34,7 +35,7 @@ input_file_name = 'Dataset early round vs late spiral 08-2000 crop'
 file_path = "".join([root_path,input_file_name,".zip"])
 
 # unzip
-#ZipFile(file_path).extractall(root_path)
+ZipFile(file_path).extractall(root_path)
 #!unzip file_path -d root_path
 
 # Create image directory path
@@ -101,8 +102,10 @@ Here are the first 9 images in the training dataset. As you can see, label 1 is 
 
 data_augmentation = keras.Sequential(
     [
+        layers.experimental.preprocessing.RandomRotation(0.25),
+        tf.keras.layers.experimental.preprocessing.RandomTranslation(0.1,0.1),
         layers.experimental.preprocessing.RandomFlip("horizontal"),
-        layers.experimental.preprocessing.RandomRotation(0.1),
+        layers.experimental.preprocessing.RandomFlip("vertical"),
     ]
 )
 
@@ -206,39 +209,23 @@ def make_model(input_shape, num_classes):
 
     # Entry block
     x = layers.experimental.preprocessing.Rescaling(1.0 / 255)(x)
-    x = layers.Conv2D(32, 3, strides=2, padding="same")(x)
-    x = layers.BatchNormalization()(x)
+    x = layers.Conv2D(32, 6, strides=1, padding="valid")(x)
     x = layers.Activation("relu")(x)
+    x = layers.MaxPooling2D(2, padding="valid")(x)
 
-    x = layers.Conv2D(64, 3, padding="same")(x)
-    x = layers.BatchNormalization()(x)
+    x = layers.Conv2D(64, 5, strides=1, padding="valid")(x)
     x = layers.Activation("relu")(x)
+    x = layers.MaxPooling2D(2, padding="valid")(x)
 
-    previous_block_activation = x  # Set aside residual
-
-    for size in [128, 256, 512, 728]:
-        x = layers.Activation("relu")(x)
-        x = layers.SeparableConv2D(size, 3, padding="same")(x)
-        x = layers.BatchNormalization()(x)
-
-        x = layers.Activation("relu")(x)
-        x = layers.SeparableConv2D(size, 3, padding="same")(x)
-        x = layers.BatchNormalization()(x)
-
-        x = layers.MaxPooling2D(3, strides=2, padding="same")(x)
-
-        # Project residual
-        residual = layers.Conv2D(size, 1, strides=2, padding="same")(
-            previous_block_activation
-        )
-        x = layers.add([x, residual])  # Add back residual
-        previous_block_activation = x  # Set aside next residual
-
-    x = layers.SeparableConv2D(1024, 3, padding="same")(x)
-    x = layers.BatchNormalization()(x)
+    x = layers.Conv2D(128, 3, strides=1, padding="valid")(x)
     x = layers.Activation("relu")(x)
+    # x = layers.MaxPooling2D(2, padding="valid")(x)
 
-    x = layers.GlobalAveragePooling2D()(x)
+    x = layers.Conv2D(128, 3, strides=1, padding="valid")(x)
+    x = layers.Activation("relu")(x)
+    x = layers.MaxPooling2D(2, padding="valid")(x)
+
+
     if num_classes == 2:
         activation = "sigmoid"
         units = 1
@@ -246,19 +233,25 @@ def make_model(input_shape, num_classes):
         activation = "softmax"
         units = num_classes
 
-    x = layers.Dropout(0.5)(x)
+    x = layers.Flatten()(x)
+
+    x = layers.Dense(2048, activation="relu")(x) 
+    # x = layers.Dropout(0.5)(x)
+    x = layers.Dense(2048, activation="relu")(x) 
+    # x = layers.Dropout(0.5)(x)
     outputs = layers.Dense(units, activation=activation)(x)
+    # outputs = layers.Dropout(0.5)(outputs)
     return keras.Model(inputs, outputs)
 
 
 model = make_model(input_shape=image_size + (3,), num_classes=2)
 # keras.utils.plot_model(model, show_shapes=True)
-
+# model.summary()
 """
 ## Train the model
 """
 
-epochs = 100
+epochs = 300
 
 callbacks = [
     # keras.callbacks.ModelCheckpoint("save_at_{epoch}.h5"),
