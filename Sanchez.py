@@ -23,6 +23,7 @@ we use Keras image preprocessing layers for image standardization and data augme
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
+from tensorflow.keras import activations
 import os
 from zipfile import ZipFile
 
@@ -30,7 +31,7 @@ from zipfile import ZipFile
 ## Load the data: class 1 = Early type galaxy | class 0 = Late type galaxy
 """
 root_path = 'D:\\Master\\Galaxy Zoo dataset\\Dataset\\'
-input_file_name = 'Dataset early round vs late spiral 08-2000 crop'
+input_file_name = 'Dataset early round vs late spiral - flag-2000 crop'
 file_path = "".join([root_path,input_file_name,".zip"])
 
 # unzip
@@ -50,7 +51,7 @@ Now we have a `Images` folder which contain two subfolders, `class 1` and `class
 ## Generate a `Dataset`
 """
 
-image_size = (64, 64)
+image_size = (69, 69)
 batch_size = 32
 
 train_ds = tf.keras.preprocessing.image_dataset_from_directory(
@@ -208,52 +209,27 @@ def make_model(input_shape, num_classes):
 
     # Entry block
     x = layers.experimental.preprocessing.Rescaling(1.0 / 255)(x)
-
-    x = layers.Conv2D(64, 6, padding="same")(x)
+    x = layers.Conv2D(32, 6, strides=1, padding="same")(x)
     x = layers.Activation("relu")(x)
-    x = layers.MaxPooling2D(2, strides=2, padding="same")(x)
+    # x = layers.MaxPooling2D(2, padding="valid")(x)
 
-    previous_block_activation = x  # Set aside residual
+    x = layers.Conv2D(64, 5, strides=1, padding="same")(x)
+    x = layers.Activation("relu")(x)
+    x = layers.Dropout(0.5)(x)
+    # x = layers.Conv2D(64, 5, strides=1, padding="valid")(x)
+    # x = layers.Activation("relu")(x)
+    x = layers.MaxPooling2D(2, padding="valid")(x)
 
-    for size in [64, 128, 256, 512]:
-        x = layers.BatchNormalization()(x)
-        x = layers.Activation("relu")(x)        
-        x = layers.Conv2D(size, 1, strides=1, padding="same")(x)
-        
-        x = layers.BatchNormalization()(x)
-        x = layers.Activation("relu")(x)        
-        x = layers.Conv2D(size, 3, strides=1, padding="same")(x)
+    x = layers.Conv2D(128, 2, strides=1, padding="same")(x)
+    x = layers.Activation("relu")(x)
+    x = layers.Dropout(0.5)(x)
+    x = layers.MaxPooling2D(2, padding="valid")(x)
 
-        x = layers.Dropout(0.5)(x)
-
-        x = layers.BatchNormalization()(x)
-        x = layers.Activation("relu")(x)        
-        x = layers.Conv2D(size*4, 1, strides=1, padding="same")(x)
-
-        previous_block_activation = layers.Conv2D(size*4, 1, strides=1, padding="same")(previous_block_activation)
-        x = layers.add([x, previous_block_activation])  # Add back residual
-        previous_block_activation = x  # Set aside next residual
-
-        x = layers.BatchNormalization()(x)
-        x = layers.Activation("relu")(x)        
-        x = layers.Conv2D(size, 1, strides=1, padding="same")(x)
-        
-        x = layers.BatchNormalization()(x)
-        x = layers.Activation("relu")(x)        
-        x = layers.Conv2D(size, 3, strides=1, padding="same")(x)
-
-        x = layers.Dropout(0.5)(x)
-
-        x = layers.BatchNormalization()(x)
-        x = layers.Activation("relu")(x)        
-        x = layers.Conv2D(size*4, 1, strides=2, padding="same")(x)
-
-        previous_block_activation = layers.Conv2D(size*4, 1, strides=2, padding="same")(previous_block_activation)
-        x = layers.add([x, previous_block_activation])  # Add back residual
-        previous_block_activation = x  # Set aside next residual
+    x = layers.Conv2D(128, 3, strides=1, padding="same")(x)
+    x = layers.Activation("relu")(x)
+    x = layers.Dropout(0.5)(x)  
 
 
-    x = layers.GlobalAveragePooling2D()(x)
     if num_classes == 2:
         activation = "sigmoid"
         units = 1
@@ -261,15 +237,20 @@ def make_model(input_shape, num_classes):
         activation = "softmax"
         units = num_classes
 
-    x = layers.Dropout(0.5)(x)
+    x = layers.Flatten()(x)
+
+    # x = layers.Dense(1024, activation="relu")(x) 
+    # # x = layers.Dropout(0.5)(x)
+    # x = layers.Dense(1024, activation="relu")(x) 
+    # # x = layers.Dropout(0.5)(x)
     outputs = layers.Dense(units, activation=activation)(x)
+    # outputs = layers.Dropout(0.5)(outputs)
     return keras.Model(inputs, outputs)
 
 
 model = make_model(input_shape=image_size + (3,), num_classes=2)
 keras.utils.plot_model(model, show_shapes=True)
 model.summary()
-
 # """
 # ## Train the model
 # """

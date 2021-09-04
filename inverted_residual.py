@@ -29,7 +29,7 @@ from zipfile import ZipFile
 """
 ## Load the data: class 1 = Early type galaxy | class 0 = Late type galaxy
 """
-root_path = 'D:\\Master\\Galaxy Zoo dataset\\Dataset\\'
+root_path = '/content/gdrive/MyDrive/DeepLearningProject/'
 input_file_name = 'Dataset early round vs late spiral 08-2000 crop'
 file_path = "".join([root_path,input_file_name,".zip"])
 
@@ -208,48 +208,33 @@ def make_model(input_shape, num_classes):
 
     # Entry block
     x = layers.experimental.preprocessing.Rescaling(1.0 / 255)(x)
+    # x = layers.Conv2D(32, 3, strides=2, padding="same")(x)
+    # x = layers.BatchNormalization()(x)
+    # x = layers.Activation("relu")(x)
 
-    x = layers.Conv2D(64, 6, padding="same")(x)
+    x = layers.Conv2D(64, 3, padding="same")(x)
+    x = layers.BatchNormalization()(x)
     x = layers.Activation("relu")(x)
-    x = layers.MaxPooling2D(2, strides=2, padding="same")(x)
 
     previous_block_activation = x  # Set aside residual
 
     for size in [64, 128, 256, 512]:
-        x = layers.BatchNormalization()(x)
-        x = layers.Activation("relu")(x)        
-        x = layers.Conv2D(size, 1, strides=1, padding="same")(x)
-        
-        x = layers.BatchNormalization()(x)
-        x = layers.Activation("relu")(x)        
-        x = layers.Conv2D(size, 3, strides=1, padding="same")(x)
-
-        x = layers.Dropout(0.5)(x)
-
-        x = layers.BatchNormalization()(x)
-        x = layers.Activation("relu")(x)        
-        x = layers.Conv2D(size*4, 1, strides=1, padding="same")(x)
-
-        previous_block_activation = layers.Conv2D(size*4, 1, strides=1, padding="same")(previous_block_activation)
-        x = layers.add([x, previous_block_activation])  # Add back residual
-        previous_block_activation = x  # Set aside next residual
-
-        x = layers.BatchNormalization()(x)
-        x = layers.Activation("relu")(x)        
-        x = layers.Conv2D(size, 1, strides=1, padding="same")(x)
-        
-        x = layers.BatchNormalization()(x)
-        x = layers.Activation("relu")(x)        
-        x = layers.Conv2D(size, 3, strides=1, padding="same")(x)
-
-        x = layers.Dropout(0.5)(x)
-
-        x = layers.BatchNormalization()(x)
-        x = layers.Activation("relu")(x)        
         x = layers.Conv2D(size*4, 1, strides=2, padding="same")(x)
+        x = layers.BatchNormalization()(x)
+        x = layers.Activation("relu")(x)
+        
+        x = layers.Conv2D(size*4, 3, strides=1, padding="same")(x)
+        x = layers.BatchNormalization()(x)
+        x = layers.Activation("relu")(x)     
 
-        previous_block_activation = layers.Conv2D(size*4, 1, strides=2, padding="same")(previous_block_activation)
+        x = layers.Conv2D(size, 1, strides=1, padding="same")(x)
+        x = layers.BatchNormalization()(x)
+
+        previous_block_activation = layers.Conv2D(size, 1, strides=2, padding="same")(previous_block_activation)
+        previous_block_activation = layers.BatchNormalization()(previous_block_activation)
+
         x = layers.add([x, previous_block_activation])  # Add back residual
+        x = layers.Activation("relu")(x)     
         previous_block_activation = x  # Set aside next residual
 
 
@@ -267,46 +252,46 @@ def make_model(input_shape, num_classes):
 
 
 model = make_model(input_shape=image_size + (3,), num_classes=2)
-keras.utils.plot_model(model, show_shapes=True)
-model.summary()
+# keras.utils.plot_model(model, show_shapes=True)
+# model.summary()
 
-# """
-# ## Train the model
-# """
+"""
+## Train the model
+"""
 
-# epochs = 300
+epochs = 10000
 
-# callbacks = [
-#     # keras.callbacks.ModelCheckpoint("save_at_{epoch}.h5"),
-# ]
-# model.compile(
-#     optimizer=keras.optimizers.Adam(1e-3),
-#     loss="binary_crossentropy",
-#     metrics=["accuracy"],
+callbacks = [
+    # keras.callbacks.ModelCheckpoint("save_at_{epoch}.h5"),
+]
+model.compile(
+    optimizer=keras.optimizers.Adam(1e-3),
+    loss="binary_crossentropy",
+    metrics=["accuracy"],
+)
+model.fit(
+    train_ds, epochs=epochs, callbacks=callbacks, validation_data=val_ds,
+)
+
+"""
+We get to ~96% validation accuracy after training for 50 epochs on the full dataset.
+"""
+
+"""
+## Run inference on new data
+
+Note that data augmentation and dropout are inactive at inference time.
+"""
+
+# img = keras.preprocessing.image.load_img(
+#     "PetImages/Cat/6779.jpg", target_size=image_size
 # )
-# model.fit(
-#     train_ds, epochs=epochs, callbacks=callbacks, validation_data=val_ds,
+# img_array = keras.preprocessing.image.img_to_array(img)
+# img_array = tf.expand_dims(img_array, 0)  # Create batch axis
+
+# predictions = model.predict(img_array)
+# score = predictions[0]
+# print(
+#     "This image is %.2f percent cat and %.2f percent dog."
+#     % (100 * (1 - score), 100 * score)
 # )
-
-# """
-# We get to ~96% validation accuracy after training for 50 epochs on the full dataset.
-# """
-
-# """
-# ## Run inference on new data
-
-# Note that data augmentation and dropout are inactive at inference time.
-# """
-
-# # img = keras.preprocessing.image.load_img(
-# #     "PetImages/Cat/6779.jpg", target_size=image_size
-# # )
-# # img_array = keras.preprocessing.image.img_to_array(img)
-# # img_array = tf.expand_dims(img_array, 0)  # Create batch axis
-
-# # predictions = model.predict(img_array)
-# # score = predictions[0]
-# # print(
-# #     "This image is %.2f percent cat and %.2f percent dog."
-# #     % (100 * (1 - score), 100 * score)
-# # )
