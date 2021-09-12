@@ -30,11 +30,11 @@ from zipfile import ZipFile
 ## Load the data: class 1 = Early type galaxy | class 0 = Late type galaxy
 """
 root_path = '/content/gdrive/MyDrive/DeepLearningProject/'
-input_file_name = 'Dataset early round vs late spiral 08-2000 crop'
+input_file_name = 'Dataset multiclass 10-500-crop'
 file_path = "".join([root_path,input_file_name,".zip"])
 
 # unzip
-#ZipFile(file_path).extractall(root_path)
+ZipFile(file_path).extractall(root_path)
 #!unzip file_path -d root_path
 
 # Create image directory path
@@ -101,8 +101,10 @@ Here are the first 9 images in the training dataset. As you can see, label 1 is 
 
 data_augmentation = keras.Sequential(
     [
+        layers.experimental.preprocessing.RandomRotation(0.25),
+        tf.keras.layers.experimental.preprocessing.RandomTranslation(0.1,0.1),
         layers.experimental.preprocessing.RandomFlip("horizontal"),
-        layers.experimental.preprocessing.RandomRotation(0.1),
+        layers.experimental.preprocessing.RandomFlip("vertical"),
     ]
 )
 
@@ -253,12 +255,13 @@ def make_model(input_shape, num_classes):
 
 model = make_model(input_shape=image_size + (3,), num_classes=2)
 # keras.utils.plot_model(model, show_shapes=True)
+# model.summary()
 
 """
 ## Train the model
 """
 
-epochs = 100
+epochs = 10000
 
 callbacks = [
     # keras.callbacks.ModelCheckpoint("save_at_{epoch}.h5"),

@@ -4,38 +4,56 @@ import pandas
 from PIL import Image
 from resizeimage import resizeimage
 
-src="D:\\Master\\Galaxy Zoo dataset\\Small dataset early round vs late spiral\\original\\late\\"              #source folder
-dest="D:\\Master\\Galaxy Zoo dataset\\Small dataset early round vs late spiral\\late\\"              #source folder
-dest_1="D:\\Master\\Galaxy Zoo dataset\\Dataset early round vs late spiral\\early\\"   #destination folder for type 1
-dest_0="D:\\Master\\Galaxy Zoo dataset\\Dataset early round vs late spiral\\late\\"   #destination fodler for type 0
-search_dataset_file="D:\\Master\\Galaxy Zoo dataset\\late type - spiral dataset.csv"      #example: "Dataset.csv"
-search_success_count=0  # number of file that have been successfully searched
-search_target_count=0   # targeted number of file to be searched
-extension="jpg"         #example: "jpg, png..."
-index=0                 #index of dataset
+src="D:\\Master\\Galaxy Zoo dataset\\Dataset\Dataset multiclass 10-500-ori\\"              #source folder
+dest_path="D:\\Master\\Galaxy Zoo dataset\\Dataset\Dataset multiclass 10-500-crop\\"              #source folder
+# dest_1="D:\\Master\\Galaxy Zoo dataset\\Dataset early round vs late spiral\\early\\"   #destination folder for type 1
+# dest_0="D:\\Master\\Galaxy Zoo dataset\\Dataset early round vs late spiral\\late\\"   #destination fodler for type 0
+# search_dataset_file="D:\\Master\\Galaxy Zoo dataset\\late type - spiral dataset.csv"      #example: "Dataset.csv"
+# search_success_count=0  # number of file that have been successfully searched
+# search_target_count=0   # targeted number of file to be searched
+# extension="jpg"         #example: "jpg, png..."
+# index=0                 #index of dataset
 
-try:
-    os.makedirs(dest_1)
-    os.makedirs(dest_0)
-except:
-    print("ALREADY EXISTING")
+class_num=10
+class_idx=[]
+dest_class_name=[]
+dest_class_path=[]
+src_class=""
+
+for x in range(class_num):
+    class_idx.append(x)
+    dest_class_name.append("class"+str(x))
+    dest_class_path.append(os.path.join(dest_path,dest_class_name[x]))
+    try:
+        os.makedirs(dest_class_path[x])
+    except:
+        print("ALREADY EXISTING")
 
 #Recursive Fuction to Check the file in each Folder
-def checkFile(src,search_dataset_file,extension):
+def checkFile(src):
     global folder,file
-    src_file = os.listdir(src)                                  #listDir returns all files and folder within the src in src_file
-    for file_name in src_file:
-        full_file_name = os.path.join(src, file_name)           #this create a path by joining src and file_name
-        fd_img = open(full_file_name, 'rb')
-        img = Image.open(fd_img)
-        img = resizeimage.resize_crop(img, [106, 106])
-        new_file_name = "".join(["crop - ", file_name])
-        new_full_file_name = os.path.join(dest, new_file_name)   
-        img.save(new_full_file_name, img.format)
-        fd_img.close()
 
-        string_to_disp=''.join(["Crop ", file_name])
-        print(string_to_disp)   
+    src_folder = os.listdir(src)                                  #listDir returns all folder within the src in src_file
+    ind = 0
+
+    for folder_name in src_folder:
+        src_class=os.path.join(src, folder_name)
+        src_file = os.listdir(src_class)                                  #listDir returns all files and folder within the src in src_file
+       
+        for file_name in src_file:
+            full_file_name = os.path.join(src_class, file_name)           #this create a path by joining src and file_name
+            fd_img = open(full_file_name, 'rb')
+            img = Image.open(fd_img)
+            img = resizeimage.resize_crop(img, [106, 106])
+            new_file_name = "".join(["crop - ", file_name])
+            new_full_file_name = os.path.join(dest_class_path[ind], new_file_name)   
+            img.save(new_full_file_name, img.format)
+            fd_img.close()
+
+            string_to_disp=''.join(["Crop ", file_name])
+            print(string_to_disp)   
+
+        ind = ind + 1
                 
 
     # # read filename dataset to be searched from csv file
@@ -95,7 +113,7 @@ def checkFile(src,search_dataset_file,extension):
              
     #     index += 1
 
-checkFile(src,search_dataset_file,extension)
+checkFile(src)
 
 # #count of targeted searching file
 # print("Count of targeted searching file: ", search_target_count)
@@ -108,5 +126,4 @@ checkFile(src,search_dataset_file,extension)
 #     print("All files have been successfully searched")
 # else:
 #     print("There are files that have not been successfully searched")
-
 
