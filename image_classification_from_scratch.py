@@ -268,7 +268,7 @@ callbacks = [
 ]
 model.compile(
     optimizer=keras.optimizers.Adam(1e-3),
-    loss="binary_crossentropy",
+    loss="categorical_crossentropy",
     metrics=["accuracy"],
 )
 model.fit(
